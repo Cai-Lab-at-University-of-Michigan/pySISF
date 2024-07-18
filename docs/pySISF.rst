@@ -1,4 +1,4 @@
-python\_package package
+pySISF Documentation
 =======================
 
 Module contents
