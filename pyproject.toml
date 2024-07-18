@@ -22,7 +22,8 @@ requires-python = ">=3.10"
 dynamic = ["version"]
 dependencies = [
     "numpy",
-    "tqdm"
+    "tqdm",
+    "zstd"
 ]
 
 [project.optional-dependencies]
