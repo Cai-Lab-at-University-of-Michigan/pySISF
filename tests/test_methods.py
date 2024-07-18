@@ -7,6 +7,9 @@ from __future__ import annotations
 
 #from pySISF import hello_world
 
-
+# Silence exit code 5
 def test_int_placeholder() -> None:
+    pass
+
+def test_placeholder() -> None:
     pass
