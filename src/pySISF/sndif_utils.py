@@ -21,6 +21,9 @@ def load_from_zip(
     correction_image=None,
     shift=None,
 ):
+    """
+    Load image frames from a SNDIF ZIP archive.
+    """
     zf = zipfile.ZipFile(file_name, mode="r")
 
     file_list = list(zf.namelist())
@@ -59,6 +62,9 @@ def load_from_zip(
 
 @njit
 def downsample(in_array, out_array):
+    """
+    Utility function to downsample a 3D image by a factor of 2X in all dimensions.
+    """
     for i, j in zip(in_array.shape, out_array.shape):
         if i // 2 != j:
             raise ValueError(f"Invalid casting ({i}/2) != ({j})")
