@@ -12,7 +12,7 @@ import numpy as np
 import sisf.sisf
 import sisf.sndif_utils
 
-sisf.DEBUG = False
+sisf.sisf.DEBUG = False
 
 start = time.time()
 
@@ -20,7 +20,7 @@ data_files = glob.glob("data/*.1X.data")
 meta_files = [x.replace("data", "meta") for x in data_files]
 
 for dfname, mfname in tqdm.tqdm(zip(data_files, meta_files), total=len(data_files)):
-    a = sisf.sisf_chunk(dfname, mfname)
+    a = sisf.sisf.sisf_chunk(dfname, mfname)
 
     b = np.array(a[:, :, :])
 
@@ -34,9 +34,9 @@ for dfname, mfname in tqdm.tqdm(zip(data_files, meta_files), total=len(data_file
         downsample_shape = tuple(i // scale for i in b.shape)
         downsample_image = np.zeros(shape=downsample_shape, dtype=np.uint16)
 
-        sndif_utils.downsample(downsample_pyramid[-1], downsample_image)
+        sisf.sndif_utils.downsample(downsample_pyramid[-1], downsample_image)
 
-        sisf.create_shard(
+        sisf.sisf.create_shard(
             dfname.replace(".1X.", f".{scale}X."),
             mfname.replace(".1X.", f".{scale}X."),
             downsample_image,
