@@ -23,7 +23,8 @@ dynamic = ["version"]
 dependencies = [
     "numpy",
     "tqdm",
-    "zstd"
+    "zstd",
+    "numba"
 ]
 
 [project.optional-dependencies]
