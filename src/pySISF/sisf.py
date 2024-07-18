@@ -29,6 +29,7 @@ SHARD_LINE_SIZE = struct.calcsize(SHARD_LINE_LAYOUT)
 
 CURRENT_VERSION = 1
 
+
 def iterate_bounded(max_val, step_size):
     i = 0
     while i < max_val:
