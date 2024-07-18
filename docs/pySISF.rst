@@ -1,15 +1,6 @@
 python\_package package
 =======================
 
-Subpackages
------------
-
-.. toctree::
-   :maxdepth: 4
-
-Submodules
-----------
-
 Module contents
 ---------------
 
