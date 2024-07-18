@@ -5,7 +5,7 @@
 """This is a sample python file for testing functions from the source code."""
 from __future__ import annotations
 
-#from pySISF import hello_world
+import pySISF
 
 # Silence exit code 5
 def test_int_placeholder() -> None:
