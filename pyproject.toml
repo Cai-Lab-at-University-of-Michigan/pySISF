@@ -25,7 +25,8 @@ dependencies = [
     "tqdm",
     "zstd",
     "numba",
-    "basicpy"
+    "basicpy",
+    "tifffile"
 ]
 
 [project.optional-dependencies]
