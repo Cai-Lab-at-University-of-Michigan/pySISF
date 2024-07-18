@@ -9,8 +9,8 @@ import time
 
 import numpy as np
 
-import sisf
-import sndif_utils
+import sisf.sisf
+import sisf.sndif_utils
 
 sisf.DEBUG = False
 
