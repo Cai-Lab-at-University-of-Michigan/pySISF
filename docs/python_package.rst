@@ -7,15 +7,13 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   python_package.hello_world
-
 Submodules
 ----------
 
 python\_package.setup module
 ----------------------------
 
-.. automodule:: python_package.setup
+.. automodule:: pySISF.setup
    :members:
    :undoc-members:
    :show-inheritance:
@@ -23,7 +21,7 @@ python\_package.setup module
 Module contents
 ---------------
 
-.. automodule:: python_package
+.. automodule:: pySISF
    :members:
    :undoc-members:
    :show-inheritance:

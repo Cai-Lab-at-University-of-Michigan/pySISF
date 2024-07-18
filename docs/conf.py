@@ -19,8 +19,8 @@ sys.path.insert(0, os.path.abspath("../src/"))
 # -- Project information -----------------------------------------------------
 
 project = "ai-python docs"
-copyright = "2022, Daniel Ciborowski"
-author = "Daniel Ciborowski"
+copyright = "2020-2024, University of Michigan"
+author = "Logan Walker, PhD"
 
 # The full version, including alpha/beta/rc tags
 release = "0.1.0"
