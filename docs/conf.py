@@ -18,12 +18,12 @@ sys.path.insert(0, os.path.abspath("../src/"))
 
 # -- Project information -----------------------------------------------------
 
-project = "ai-python docs"
+project = "pySISF Docs"
 copyright = "2020-2024, University of Michigan"
 author = "Logan Walker, PhD"
 
 # The full version, including alpha/beta/rc tags
-release = "0.1.0"
+release = "0.1.1"
 
 
 # -- General configuration ---------------------------------------------------
