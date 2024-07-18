@@ -17,12 +17,18 @@ def load_from_zip(
     stack_size=2000,
     stack_select=None,
     thread_count=1,
-    chunk_batch=1,
-    correction_image=None,
-    shift=None,
 ):
     """
     Load image frames from a SNDIF ZIP archive.
+
+    Parameters:
+        file_name (str): Name of the input ZIP file.
+        stack_size (int): Number of frames expected.
+        stack_select (slice): A parameter passed to the file list to select inputs.
+        thread_count (int): Number of threads to launch on the ThreadPoolExecutor.
+
+    Returns:
+        Numpy array containing the loaded frames
     """
     zf = zipfile.ZipFile(file_name, mode="r")
 
@@ -51,10 +57,6 @@ def load_from_zip(
     outnp = np.frombuffer(out, dtype=np.uint16)
     outnp = outnp.reshape(stack_size, 2304, 2304)
 
-    if correction_image is not None:
-        for i in range(stack_size):
-            np.multiply(outnp[i, ...], correction_image, out=outnp[i, ...], casting="unsafe")
-
     outnp = np.moveaxis(outnp, 0, -1)
 
     return outnp
@@ -64,6 +66,13 @@ def load_from_zip(
 def downsample(in_array, out_array):
     """
     Utility function to downsample a 3D image by a factor of 2X in all dimensions.
+
+    Parameters:
+        in_array (numpy): 3D array containing the input image
+        out_array (numpy): identical-sized 3D array to write the output to
+
+    Returns:
+        Numpy array containing the downsampled image
     """
     for i, j in zip(in_array.shape, out_array.shape):
         if i // 2 != j:
