@@ -15,8 +15,6 @@ import sndif_utils
 
 from basicpy import BaSiC
 
-import pyBlindRL.commands
-
 with open("/home/loganaw/dev/pySISF/070124_flatfield_fits.p", "rb") as f:
     flatfield_fits = pickle.loads(f.read())
 
