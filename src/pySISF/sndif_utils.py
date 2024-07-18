@@ -11,6 +11,7 @@ import concurrent
 import numpy as np
 from numba import njit
 
+
 def load_from_zip(
     file_name,
     stack_size=2000,
@@ -42,20 +43,19 @@ def load_from_zip(
 
     while n < stack_size:
         n += 1
-        out += b'0' * (2 * 2304 * 2304)
+        out += b"0" * (2 * 2304 * 2304)
 
     outnp = np.frombuffer(out, dtype=np.uint16)
     outnp = outnp.reshape(stack_size, 2304, 2304)
 
     if correction_image is not None:
         for i in range(stack_size):
-            np.multiply(
-                outnp[i, ...], correction_image, out=outnp[i, ...], casting="unsafe"
-            )
+            np.multiply(outnp[i, ...], correction_image, out=outnp[i, ...], casting="unsafe")
 
     outnp = np.moveaxis(outnp, 0, -1)
 
     return outnp
+
 
 @njit
 def downsample(in_array, out_array):
