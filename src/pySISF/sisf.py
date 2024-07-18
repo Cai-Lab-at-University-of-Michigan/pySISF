@@ -14,7 +14,7 @@ from collections import defaultdict
 import zstd
 import numpy as np
 
-import pySISF.vidlib
+from pySISF import vidlib
 
 METADATA_NAME = "metadata.bin"
 DEBUG = False
