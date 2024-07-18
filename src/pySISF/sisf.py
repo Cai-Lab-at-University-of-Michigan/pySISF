@@ -30,9 +30,7 @@ SHARD_HEADER_SIZE = struct.calcsize(SHARD_HEADER_LAYOUT)
 SHARD_LINE_LAYOUT = f"<QL"
 SHARD_LINE_SIZE = struct.calcsize(SHARD_LINE_LAYOUT)
 
-
 CURRENT_VERSION = 1
-
 
 def iterate_bounded(max_val, step_size):
     i = 0
