@@ -16,13 +16,13 @@ sisf.DEBUG = False
 
 start = time.time()
 
-data_files = glob.glob('data/*.1X.data')
-meta_files = [x.replace('data', 'meta') for x in data_files]
+data_files = glob.glob("data/*.1X.data")
+meta_files = [x.replace("data", "meta") for x in data_files]
 
 for dfname, mfname in tqdm.tqdm(zip(data_files, meta_files), total=len(data_files)):
     a = sisf.sisf_chunk(dfname, mfname)
 
-    b = np.array(a[:,:,:])
+    b = np.array(a[:, :, :])
 
     downsample_pyramid = [b]
     for downsample_rate in range(5):
@@ -37,12 +37,12 @@ for dfname, mfname in tqdm.tqdm(zip(data_files, meta_files), total=len(data_file
         sndif_utils.downsample(downsample_pyramid[-1], downsample_image)
 
         sisf.create_shard(
-            dfname.replace('.1X.', f'.{scale}X.'),
-            mfname.replace('.1X.', f'.{scale}X.'),
+            dfname.replace(".1X.", f".{scale}X."),
+            mfname.replace(".1X.", f".{scale}X."),
             downsample_image,
-            (32,32,32),
+            (32, 32, 32),
             1,
-            thread_count=8
+            thread_count=8,
         )
 
         downsample_pyramid.append(downsample_image)
