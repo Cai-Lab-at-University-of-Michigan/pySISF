@@ -24,7 +24,8 @@ dependencies = [
     "numpy",
     "tqdm",
     "zstd",
-    "numba"
+    "numba",
+    "basicpy"
 ]
 
 [project.optional-dependencies]
