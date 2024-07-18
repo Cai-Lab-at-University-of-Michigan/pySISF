@@ -10,8 +10,8 @@ import time
 import numpy as np
 from scipy import ndimage
 
-import sisf
-import sndif_utils
+import sisf.sisf
+import sisf.sndif_utils
 
 from basicpy import BaSiC
 
@@ -22,7 +22,7 @@ files = sys.argv[1:]
 if len(files) == 0:
     raise AssertionError("At least one file must be input.")
 
-sisf.DEBUG = False
+sisf.sisf.DEBUG = False
 
 out_files = list((x + ".data", x + ".meta") for x in (x.replace(".zip", "") for x in files))
 
@@ -34,7 +34,7 @@ for i, (in_file, (out_file_data, out_file_meta)) in enumerate(zip(files, out_fil
 
     channel = int(in_file.split("ch")[1].split(".")[0])
 
-    r = sndif_utils.load_from_zip(
+    r = sisf.sndif_utils.load_from_zip(
         in_file,
         stack_size=2000,  # stack_size=10,
         # stack_select=slice(1000, 1010),
@@ -65,7 +65,7 @@ for i, (in_file, (out_file_data, out_file_meta)) in enumerate(zip(files, out_fil
         if scale == 1:
             offset = (2304 - 2000) // 2
             crop = (offset, 2304 - offset, offset, 2304 - offset, 0, 2000)
-            sisf.create_shard(
+            sisf.sisf.create_shard(
                 out_file_data.replace(".data", ".1X.data"),
                 out_file_meta.replace(".meta", ".1X.meta"),
                 r,
@@ -88,9 +88,9 @@ for i, (in_file, (out_file_data, out_file_meta)) in enumerate(zip(files, out_fil
                 downsample_shape[2],
             )
 
-            sndif_utils.downsample(downsample_pyramid[-1], downsample_image)
+            sisf.sndif_utils.downsample(downsample_pyramid[-1], downsample_image)
 
-            sisf.create_shard(
+            sisf.sisf.create_shard(
                 out_file_data.replace(".data", f".{scale}X.data"),
                 out_file_meta.replace(".meta", f".{scale}X.meta"),
                 downsample_image,
