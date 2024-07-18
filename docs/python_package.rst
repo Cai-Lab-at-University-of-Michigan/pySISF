@@ -10,18 +10,28 @@ Subpackages
 Submodules
 ----------
 
-python\_package.setup module
-----------------------------
+Module contents
+---------------
 
-.. automodule:: pySISF.setup
+.. automodule:: pySISF.sisf
    :members:
    :undoc-members:
    :show-inheritance:
 
+
 Module contents
 ---------------
 
-.. automodule:: pySISF
+.. automodule:: pySISF.sndif_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pySISF.vidlib
    :members:
    :undoc-members:
    :show-inheritance:
