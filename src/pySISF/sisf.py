@@ -2,19 +2,16 @@
 #   Copyright (c) University of Michigan 2020-2024. All rights reserved.
 #   Licensed under the MIT License. See LICENSE in project root for information.
 #   ---------------------------------------------------------------------------------
-"""This is a Sample Python file."""
-
+"""pySISF."""
 
 import struct
 import os
-import multiprocessing
 import tqdm
 import itertools
 import concurrent
-import zstd
-
 from collections import defaultdict
 
+import zstd
 import numpy as np
 
 import vidlib
