@@ -82,9 +82,7 @@ def create_shard_worker(data, coords, compression):
         case 2:
             return vidlib.encode_stack(c, method=vidlib.EncoderType.X264, debug=DEBUG)
         case 3:
-            return vidlib.encode_stack(
-                c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG
-            )
+            return vidlib.encode_stack(c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG)
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
 
@@ -118,9 +116,7 @@ def create_shard(
 
     chunk_table = []
     with open(fname_data, "wb") as fdata:
-        with concurrent.futures.ThreadPoolExecutor(
-            max_workers=thread_count
-        ) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=thread_count) as executor:
             futures = iter_chunks(executor)
 
             with tqdm.tqdm(total=total_chunks) as pb:
@@ -191,9 +187,7 @@ def create_sisf(fname, data, mchunk_size, chunk_size, res, enable_status=True):
 
     # Create Header
     with open(f"{fname}/{METADATA_NAME}", "wb") as f:
-        header = create_metadata(
-            CURRENT_VERSION, dtype_code, channel_count, mchunk_size, res, size
-        )
+        header = create_metadata(CURRENT_VERSION, dtype_code, channel_count, mchunk_size, res, size)
         f.write(header)
 
     # Calculate totals
@@ -207,12 +201,8 @@ def create_sisf(fname, data, mchunk_size, chunk_size, res, enable_status=True):
     # Create data chunks
     for c in range(channel_count):
         for i, (istart, iend) in enumerate(iterate_bounded(size[0], mchunk_size[0])):
-            for j, (jstart, jend) in enumerate(
-                iterate_bounded(size[1], mchunk_size[1])
-            ):
-                for k, (kstart, kend) in enumerate(
-                    iterate_bounded(size[2], mchunk_size[2])
-                ):
+            for j, (jstart, jend) in enumerate(iterate_bounded(size[1], mchunk_size[1])):
+                for k, (kstart, kend) in enumerate(iterate_bounded(size[2], mchunk_size[2])):
                     osizei = iend - istart
                     osizej = jend - jstart
                     osizek = kend - kstart
@@ -289,9 +279,7 @@ class sisf_chunk:
             f.seek(SHARD_HEADER_SIZE + (SHARD_LINE_SIZE * idx))
             meta_bin = f.read(SHARD_LINE_SIZE)
             if len(meta_bin) != SHARD_LINE_SIZE:
-                raise ValueError(
-                    f"Invalid read size {len(meta_bin)}, likely invalid chunk id {idx}"
-                )
+                raise ValueError(f"Invalid read size {len(meta_bin)}, likely invalid chunk id {idx}")
             read_offset, read_size = struct.unpack(SHARD_LINE_LAYOUT, meta_bin)
 
         return (read_offset, read_size)
@@ -305,13 +293,9 @@ class sisf_chunk:
         if self.compression_type == 1:
             chunk_decompressed = zstd.decompress(chunk_compressed)
         else:
-            raise NotImplementedError(
-                f"Decompression type {self.compression_type} not implemented."
-            )
+            raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
 
-        out = np.frombuffer(
-            chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8)
-        )
+        out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
 
         return out
 
@@ -326,8 +310,7 @@ class sisf_chunk:
         chunk_coords = self.get_chunk_coords(idx)
 
         return tuple(  # istart, iend, isize
-            min((chunk_coords[i] + 1) * self.chunk_size[i], self.size[i])
-            - chunk_coords[i] * self.chunk_size[i]
+            min((chunk_coords[i] + 1) * self.chunk_size[i], self.size[i]) - chunk_coords[i] * self.chunk_size[i]
             for i in range(3)
         )
 
@@ -385,31 +368,20 @@ class sisf_chunk:
                 raise NotImplementedError("Negative indexing not implemented.")
 
             if stop > self.shape[i] or start >= self.shape[i]:
-                raise IndexError(
-                    f"Axis {i} selection ({start, stop}) out of range ({self.shape[i]})."
-                )
+                raise IndexError(f"Axis {i} selection ({start, stop}) out of range ({self.shape[i]}).")
 
         # Define output variable
         outshape = tuple(stop - start for start, stop in keys)
-        out = np.zeros(
-            shape=outshape, dtype=np.uint16
-        )  # TODO should dynamically change dtype
+        out = np.zeros(shape=outshape, dtype=np.uint16)  # TODO should dynamically change dtype
 
         # Shift stop and start to match crop
-        keys = tuple(
-            (start + crop_start, stop + crop_start)
-            for (crop_start, _), (start, stop) in zip(self.crop, key)
-        )
+        keys = tuple((start + crop_start, stop + crop_start) for (crop_start, _), (start, stop) in zip(self.crop, key))
 
         xstart = 0
-        for (cxstart, _), (sxstart, sxend) in sisf_chunk.iterate_chunks(
-            key[0][0], key[0][1], self.chunk_size[0]
-        ):
+        for (cxstart, _), (sxstart, sxend) in sisf_chunk.iterate_chunks(key[0][0], key[0][1], self.chunk_size[0]):
             xsize = sxend - sxstart
             ystart = 0
-            for (cystart, _), (systart, syend) in sisf_chunk.iterate_chunks(
-                key[1][0], key[1][1], self.chunk_size[1]
-            ):
+            for (cystart, _), (systart, syend) in sisf_chunk.iterate_chunks(key[1][0], key[1][1], self.chunk_size[1]):
                 ysize = syend - systart
                 zstart = 0
                 for (czstart, _), (szstart, szend) in sisf_chunk.iterate_chunks(
@@ -526,9 +498,7 @@ class sisf:
                     raise IndexError(f"Channel out of range {(start,stop)}.")
             else:
                 if stop > self.shape[i] or start >= self.shape[i]:
-                    raise IndexError(
-                        f"Axis {i} selection ({start, stop}) out of range ({self.shape[i]})."
-                    )
+                    raise IndexError(f"Axis {i} selection ({start, stop}) out of range ({self.shape[i]}).")
 
         outshape = tuple(stop - start for start, stop in keys)
 
@@ -542,27 +512,19 @@ class sisf:
 
         for c in range(*key[0]):
             xstart = 0
-            for (cxstart, _), (sxstart, sxend) in sisf_chunk.iterate_chunks(
-                key[1][0], key[1][1], mcx
-            ):
+            for (cxstart, _), (sxstart, sxend) in sisf_chunk.iterate_chunks(key[1][0], key[1][1], mcx):
                 xsize = sxend - sxstart
                 chunk_id_x = cxstart // mcx
                 ystart = 0
-                for (cystart, _), (systart, syend) in sisf_chunk.iterate_chunks(
-                    key[2][0], key[2][1], mcy
-                ):
+                for (cystart, _), (systart, syend) in sisf_chunk.iterate_chunks(key[2][0], key[2][1], mcy):
                     ysize = syend - systart
                     chunk_id_y = cystart // mcy
                     zstart = 0
-                    for (czstart, _), (szstart, szend) in sisf_chunk.iterate_chunks(
-                        key[3][0], key[3][1], mcz
-                    ):
+                    for (czstart, _), (szstart, szend) in sisf_chunk.iterate_chunks(key[3][0], key[3][1], mcz):
                         zsize = szend - szstart
                         chunk_id_z = czstart // mcz
 
-                        chunk = self.get_chunk(
-                            chunk_id_x, chunk_id_y, chunk_id_z, c, scale
-                        )
+                        chunk = self.get_chunk(chunk_id_x, chunk_id_y, chunk_id_z, c, scale)
 
                         out[
                             c,
