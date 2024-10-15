@@ -9,6 +9,7 @@ import os
 import tqdm
 import itertools
 import concurrent
+import concurrent.futures
 from collections import defaultdict
 
 import zstd
