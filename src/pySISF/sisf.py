@@ -242,11 +242,16 @@ def create_sisf(
                     )
 
                     # Perform downsampling
-                    if downsampling:
+                    if downsampling is not None:
                         downsample_pyramid = [chunk]
 
-                        for i in range(downsampling):
-                            scale = 2**i
+                        for scalei in range(downsampling):
+                            # convert from 0, 1, 2, etc. -> 1X, 2X, 4X, etc.
+                            scale = 2**scalei
+
+                            # Skip basecase, already handled above
+                            if scale == 1:
+                                continue
 
                             # Generate downsampled file names
                             new_chunk_name_data = chunk_name_data.replace(".1X.", f".{scale}X.")
