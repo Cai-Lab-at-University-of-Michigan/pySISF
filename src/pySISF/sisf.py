@@ -228,7 +228,13 @@ def create_sisf(
 
                     # Make buffer of only this metachunk
                     chunk = np.zeros((osizei, osizej, osizek), dtype=np.uint16)
-                    chunk[...] = data[c, istart:iend, jstart:jend, kstart:kend]
+
+                    if channel_count == 1:
+                        chunk[...] = data[istart:iend, jstart:jend, kstart:kend]
+                    elif channel_count > 1:
+                        chunk[...] = data[c, istart:iend, jstart:jend, kstart:kend]
+                    else:
+                        raise ValueError(f"Invalid channel count! ({channel_count})")
 
                     # Save 1X image
                     create_shard(
