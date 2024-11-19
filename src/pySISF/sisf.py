@@ -85,15 +85,30 @@ def create_shard_worker(data, coords, compression):
 
 
 def create_shard(
-    fname_data,
-    fname_meta,
+    fname_data: str,
+    fname_meta: str,
     data,
     chunk_size,
     compression,
     thread_count=8,
     chunk_batch=1024,
     crop=None,
-):
+    progress=True,
+) -> None:
+    """
+    Function to create a SISF shard.
+
+    parameters:
+        fname_data (str): Name of the data file to create.
+        fname_meta (str): Name of the metadata file to create.
+        data (3D numpy array-like): Raw data for the chunk.
+        chunk_size (3-tuple of int): Size of each chunk
+        compression (int): compression codec to use
+        thread_count (int, default 8): number of threads to use for data packing
+        chunk_batch (int, default 1024): number of jobs to allocate per thread for load balancing
+        crop (3-tuple of int, default None): if set, encodes a crop factor into the shard
+        progress (bool, default True): prints a loading bar using `tqdm`
+    """
     dtype = 1
 
     total_chunks = 1
