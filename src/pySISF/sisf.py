@@ -15,7 +15,6 @@ from collections import defaultdict
 import zstd
 import numpy as np
 
-from pySISF import vidlib
 from pySISF import vidlib, sndif_utils
 
 METADATA_NAME = "metadata.bin"
@@ -163,7 +162,22 @@ def create_shard(
         fmeta.write(bytes(towrite))
 
 
-def create_sisf(fname, data, mchunk_size, chunk_size, res, enable_status=True):
+def create_sisf(
+    fname: str, data, mchunk_size, chunk_size, res, enable_status=True, downsampling=None, compression=1, thread_count=8
+) -> None:
+    """
+    Function to create a SISF archive.
+
+    Parameters:
+        fname (string): Name of the folder to place the SISF archive into, created if does not exist.
+        data (numpy array-like): Represents the data to be converted in CXYZ format.
+        mchunk_size (3-tuple): size of metachunks to create, e.g. (2000,2000,2000).
+        res (3-tuple): resolution of the dataset in nanometers (nm), e.g. (100,100,100).
+        enable_status (bool, default True): If true, print out a loading bar for creation using `tqdm`.
+        downsampling (int, default None): How many downsample tiers to generate.
+        compression (int, default 1->ZSTD): What compression codec to use.
+        thread_count (int, default 8): How many threads to use for data packing.
+    """
     if fname.endswith("/"):
         fname = fname[:-1]
 
@@ -174,12 +188,14 @@ def create_sisf(fname, data, mchunk_size, chunk_size, res, enable_status=True):
             pass  # folder exists
 
     if len(data.shape) == 3:
-        data = np.expand_dims(data, 0)
-
-    channel_count = data.shape[0]
-    size = data.shape[1:]
+        channel_count = 1
+        size = data.shape
+    elif len(data.shape) == 4:
+        channel_count = data.shape[0]
+        size = data.shape[1:]
 
     dtype_code = get_dtype_code(data.dtype)
+    # TODO handle dtype errors
 
     print(channel_count, size)
 
@@ -205,15 +221,56 @@ def create_sisf(fname, data, mchunk_size, chunk_size, res, enable_status=True):
                     osizej = jend - jstart
                     osizek = kend - kstart
 
+                    # Generate file names
                     chunk_name = f"chunk_{i}_{j}_{k}.{c}.1X"
                     chunk_name_data = f"{fname}/data/{chunk_name}.data"
                     chunk_name_meta = f"{fname}/meta/{chunk_name}.meta"
 
-                    # make buffer
+                    # Make buffer of only this metachunk
                     chunk = np.zeros((osizei, osizej, osizek), dtype=np.uint16)
                     chunk[...] = data[c, istart:iend, jstart:jend, kstart:kend]
 
-                    create_shard(chunk_name_data, chunk_name_meta, chunk, chunk_size, 1)
+                    # Save 1X image
+                    create_shard(
+                        chunk_name_data, chunk_name_meta, chunk, chunk_size, compression, thread_count=thread_count
+                    )
+
+                    # Perform downsampling
+                    if downsampling:
+                        downsample_pyramid = [chunk]
+
+                        for i in range(downsampling):
+                            scale = 2**i
+
+                            # Generate downsampled file names
+                            new_chunk_name_data = chunk_name_data.replace(".1X.", f".{scale}X.")
+                            new_chunk_name_meta = chunk_name_meta.replace(".1X.", f".{scale}X.")
+
+                            chunk_down = np.zeros(
+                                shape=(
+                                    downsample_pyramid[-1].shape[0] // 2,
+                                    downsample_pyramid[-1].shape[1] // 2,
+                                    downsample_pyramid[-1].shape[2] // 2,
+                                ),
+                                dtype=np.uint16,
+                            )
+
+                            # calculate downsampled image
+                            sndif_utils.downsample(downsample_pyramid[-1], chunk_down)
+                            downsample_pyramid.append(chunk_down)
+
+                            # Assign offsets, but not relevant here
+
+                            create_shard(
+                                new_chunk_name_data,
+                                new_chunk_name_meta,
+                                downsample_pyramid[-1],
+                                chunk_size,
+                                compression,
+                                thread_count=thread_count,
+                            )
+
+                        del downsample_pyramid
 
                     if enable_status:
                         status_bar.update(1)
