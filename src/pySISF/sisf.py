@@ -193,6 +193,8 @@ def create_sisf(
     elif len(data.shape) == 4:
         channel_count = data.shape[0]
         size = data.shape[1:]
+    else:
+        raise ValueError(f"Invalid image dimension size {data.shape}!")
 
     dtype_code = get_dtype_code(data.dtype)
     # TODO handle dtype errors
