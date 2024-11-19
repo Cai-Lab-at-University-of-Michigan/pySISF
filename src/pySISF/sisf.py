@@ -16,6 +16,7 @@ import zstd
 import numpy as np
 
 from pySISF import vidlib
+from pySISF import vidlib, sndif_utils
 
 METADATA_NAME = "metadata.bin"
 DEBUG = False
