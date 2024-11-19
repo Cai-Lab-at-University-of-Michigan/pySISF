@@ -403,6 +403,9 @@ class sisf_chunk:
 
         return out
 
+    def __repr__(self):
+        return f'<sif chunk {self.fname_data}/{self.fname_meta} {self.shape}>'
+
     @staticmethod
     def iterate_chunks(rstart, rstop, cs):
         for cstart in range(cs * (rstart // cs), cs * ((rstop + cs - 1) // cs), cs):
