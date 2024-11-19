@@ -405,7 +405,6 @@ class sisf_chunk:
         return out
 
     def __repr__(self):
-        return f'<sif chunk {self.fname_data}/{self.fname_meta} {self.shape}>'
         return f"<sif chunk {self.fname_data}/{self.fname_meta} {self.shape}>"
 
     @staticmethod
