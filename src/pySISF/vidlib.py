@@ -8,7 +8,6 @@ from enum import Enum
 import ffmpeg
 import numpy as np
 
-fmpeg_exe = "ffmpeg"
 ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
