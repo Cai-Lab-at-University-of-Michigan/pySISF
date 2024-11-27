@@ -1,5 +1,5 @@
 #   ---------------------------------------------------------------------------------
-#   Copyright (c) University of Michigan 2020-2024. All rights reserved.
+#   Copyright (c) University of Michigan 2020-2025. All rights reserved.
 #   Licensed under the MIT License. See LICENSE in project root for information.
 #   ---------------------------------------------------------------------------------
 """pySISF."""
