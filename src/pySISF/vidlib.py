@@ -4,63 +4,62 @@
 #   ---------------------------------------------------------------------------------
 
 from enum import Enum
-
-import ffmpeg
 import numpy as np
+import subprocess
 
 ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
-
-def encode_stack(input_stack, method=EncoderType.X264, debug=False):
+def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
     t = input_stack.shape[0]
     w = input_stack.shape[1]
     h = input_stack.shape[2]
 
-    nodes = ffmpeg.input("pipe:", format="rawvideo", pix_fmt="gray", s=f"{h}x{w}", framerate="24/1")
+    ffmpeg_command = [
+        ffmpeg_exe,
+
+        # Formatting for the input stream
+        '-f', 'rawvideo',
+        '-vcodec', 'rawvideo',
+        '-pix_fmt', 'gray',
+        '-s', f'{h}x{w}',
+        '-r', fps,
+        '-i', '-',
+
+        # Formatting for the output stream
+        '-an',
+        '-f', 'rawvideo',
+        '-r', fps,
+        '-pix_fmt', 'gray',
+        '-vcodec', 'libx264',
+
+        # Codec and output location added below
+    ]
 
     match method:
         case EncoderType.X264:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libx264",
-            )
+            ffmpeg_command.append('-vcodec')
+            ffmpeg_command.append('libx264')
         case EncoderType.X265:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libx265",
-            )
+            ffmpeg_command.append('-vcodec')
+            ffmpeg_command.append('libx265')
         case EncoderType.AV1_AOM:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libaom-av1",
-            )
+            ffmpeg_command.append('-vcodec')
+            ffmpeg_command.append('libaom-av1')
         case EncoderType.AV1_SVT:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libsvtav1",
-            )
+            ffmpeg_command.append('-vcodec')
+            ffmpeg_command.append('libsvtav1')
         case _:
             raise ValueError(f"Unknown method {method}.")
 
-    process = nodes.run_async(
-        cmd=fmpeg_exe if method != EncoderType.AV1_SVT else "./ffmpeg_forav1",
-        pipe_stdout=True,
-        pipe_stdin=True,
-        pipe_stderr=(not debug),
+    ffmpeg_command.append( 'pipe:' )
+
+    job = subprocess.Popen(
+        ffmpeg_command,
+        stdin = subprocess.PIPE,
+        stdout = subprocess.PIPE,
+        #stderr = subprocess.PIPE
     )
 
     match input_stack.dtype:
@@ -75,7 +74,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False):
         case _:
             raise ValueError(f"Invalid data input type {input_stack.dtype}.")
 
-    out, err = process.communicate(input=to_encoder)
+    out, err = job.communicate(input=to_encoder)
 
     if not len(out):
         raise ValueError("No output receieved from ffmpeg. Is your chunk size sufficient?")
