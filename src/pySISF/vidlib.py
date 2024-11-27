@@ -11,6 +11,7 @@ ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
+
 def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
     t = input_stack.shape[0]
     w = input_stack.shape[1]
@@ -18,48 +19,55 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
 
     ffmpeg_command = [
         ffmpeg_exe,
-
         # Formatting for the input stream
-        '-f', 'rawvideo',
-        '-vcodec', 'rawvideo',
-        '-pix_fmt', 'gray',
-        '-s', f'{h}x{w}',
-        '-r', fps,
-        '-i', '-',
-
+        "-f",
+        "rawvideo",
+        "-vcodec",
+        "rawvideo",
+        "-pix_fmt",
+        "gray",
+        "-s",
+        f"{h}x{w}",
+        "-r",
+        fps,
+        "-i",
+        "-",
         # Formatting for the output stream
-        '-an',
-        '-f', 'rawvideo',
-        '-r', fps,
-        '-pix_fmt', 'gray',
-        '-vcodec', 'libx264',
-
+        "-an",
+        "-f",
+        "rawvideo",
+        "-r",
+        fps,
+        "-pix_fmt",
+        "gray",
+        "-vcodec",
+        "libx264",
         # Codec and output location added below
     ]
 
     match method:
         case EncoderType.X264:
-            ffmpeg_command.append('-vcodec')
-            ffmpeg_command.append('libx264')
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libx264")
         case EncoderType.X265:
-            ffmpeg_command.append('-vcodec')
-            ffmpeg_command.append('libx265')
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libx265")
         case EncoderType.AV1_AOM:
-            ffmpeg_command.append('-vcodec')
-            ffmpeg_command.append('libaom-av1')
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libaom-av1")
         case EncoderType.AV1_SVT:
-            ffmpeg_command.append('-vcodec')
-            ffmpeg_command.append('libsvtav1')
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libsvtav1")
         case _:
             raise ValueError(f"Unknown method {method}.")
 
-    ffmpeg_command.append( 'pipe:' )
+    ffmpeg_command.append("pipe:")
 
     job = subprocess.Popen(
         ffmpeg_command,
-        stdin = subprocess.PIPE,
-        stdout = subprocess.PIPE,
-        #stderr = subprocess.PIPE
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        # stderr = subprocess.PIPE
     )
 
     match input_stack.dtype:
