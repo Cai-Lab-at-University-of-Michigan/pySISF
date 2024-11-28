@@ -12,7 +12,7 @@ ffmpeg_exe = "ffmpeg"
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
 
-def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
+def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
     t = input_stack.shape[0]
     w = input_stack.shape[1]
     h = input_stack.shape[2]
@@ -37,11 +37,15 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
         "-f",
         "rawvideo",
         "-r",
-        fps,
+        f"{fps}/1",
         "-pix_fmt",
         "gray",
         "-vcodec",
         "libx264",
+        "-preset",
+        "slow",
+        "-crf",
+        "17"
         # Codec and output location added below
     ]
 
