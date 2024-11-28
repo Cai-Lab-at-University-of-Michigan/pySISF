@@ -112,15 +112,6 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False):
         "pipe:"
     ]
 
-    #nodes = ffmpeg.input("pipe:", framerate="24/1").output("pipe:", format="rawvideo", pix_fmt="gray", framerate="24/1")
-
-    #process = nodes.run_async(cmd=fmpeg_exe, pipe_stdout=True, pipe_stdin=True, pipe_stderr=(not debug))
-
-    #process.stdin.write(input_blob)
-    #process.stdin.close()
-
-    #r = process.stdout.read()
-
     job = subprocess.Popen(
         ffmpeg_command,
         stdin=subprocess.PIPE,
