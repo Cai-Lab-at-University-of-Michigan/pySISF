@@ -90,7 +90,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
     return out
 
 
-def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False):
+def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps='24/1'):
     ffmpeg_command = [
         ffmpeg_exe,
         # Formatting for the input stream
