@@ -78,7 +78,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps="24/1"):
             to_encoder = np.array(input_stack, dtype=float)
             to_encoder /= to_encoder.max()
             to_encoder *= 2**8
-            to_encoder = to_encoder.tobytes()
+            to_encoder = to_encoder.astype(np.uint8).tobytes()
         case _:
             raise ValueError(f"Invalid data input type {input_stack.dtype}.")
 
