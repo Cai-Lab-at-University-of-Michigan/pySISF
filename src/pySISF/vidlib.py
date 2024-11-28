@@ -119,6 +119,8 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
         # stderr = subprocess.PIPE
     )
 
+    to_encoder = input_blob
+
     out, err = job.communicate(input=to_encoder)
 
     out_np = np.frombuffer(out, dtype=np.uint8)
