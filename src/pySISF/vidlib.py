@@ -29,7 +29,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
         "-s",
         f"{h}x{w}",
         "-r",
-        fps,
+        f"{fps}/1",
         "-i",
         "-",
         # Formatting for the output stream
