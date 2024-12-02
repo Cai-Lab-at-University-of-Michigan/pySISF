@@ -138,6 +138,8 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
     out_np = np.frombuffer(out, dtype=np.uint8)
 
     t_size = out_np.shape[0] // (dims[0] * dims[1])
-    out_np = out_np.reshape((t_size, *dims))
+    out_np = out_np.reshape((t_size, *dims)) # Z X Y
+
+    out_np = np.moveaxis(out_np, 0, -1) # X Y Z
 
     return out_np
