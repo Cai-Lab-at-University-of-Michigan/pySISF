@@ -13,9 +13,14 @@ EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
 
 def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
-    t = input_stack.shape[0]
-    w = input_stack.shape[1]
-    h = input_stack.shape[2]
+    if len(input_stack.shape) != 3:
+        raise ValueError(f"Invalid input size {input_stack.shape}! (should be 3)")
+
+    # Input XYZ formatted, using Z as time channel
+
+    t = input_stack.shape[2]
+    w = input_stack.shape[0]
+    h = input_stack.shape[1]
 
     ffmpeg_command = [
         ffmpeg_exe,
@@ -45,7 +50,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
         "-preset",
         "slow",
         "-crf",
-        "17"
+        "17",
         # Codec and output location added below
     ]
 
@@ -74,15 +79,20 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
         # stderr = subprocess.PIPE
     )
 
+    to_encoder = b""
+
     match input_stack.dtype:
         case np.uint8:
-            to_encoder = input_stack.tobytes()
+            to_encoder = np.moveaxis(input_stack, -1, 0).tobytes()
         case np.uint16:
             # apply rescale...
             to_encoder = np.array(input_stack, dtype=float)
-            to_encoder /= to_encoder.max()
+            to_encoder /= to_encoder.max() if to_encoder.max() > 0 else 1
             to_encoder *= 2**8
-            to_encoder = to_encoder.astype(np.uint8).tobytes()
+            to_encoder = to_encoder.astype(np.uint8)
+
+            to_encoder = np.moveaxis(to_encoder, -1, 0)
+            to_encoder = to_encoder.tobytes()
         case _:
             raise ValueError(f"Invalid data input type {input_stack.dtype}.")
 
@@ -94,7 +104,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
     return out
 
 
-def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps='24/1'):
+def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps="24/1"):
     ffmpeg_command = [
         ffmpeg_exe,
         # Formatting for the input stream
@@ -113,7 +123,7 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
         "-vcodec",
         "rawvideo",
         # Codec and output location added below
-        "pipe:"
+        "pipe:",
     ]
 
     job = subprocess.Popen(
@@ -123,9 +133,7 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
         # stderr = subprocess.PIPE
     )
 
-    to_encoder = input_blob
-
-    out, err = job.communicate(input=to_encoder)
+    out, err = job.communicate(input=input_blob)
 
     out_np = np.frombuffer(out, dtype=np.uint8)
 
