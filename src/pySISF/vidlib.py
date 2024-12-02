@@ -12,7 +12,7 @@ ffmpeg_exe = "ffmpeg"
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
 
-def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
+def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, compression_opts=None):
     if len(input_stack.shape) != 3:
         raise ValueError(f"Invalid input size {input_stack.shape}! (should be 3)")
 
@@ -21,6 +21,14 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
     t = input_stack.shape[2]
     w = input_stack.shape[0]
     h = input_stack.shape[1]
+
+    crf = 17
+    preset = 'slow'
+    if compression_opts:
+        if "crf" in compression_opts:
+            crf = compression_opts['crf']
+        if 'preset' in compression_opts:
+            preset = compression_opts['preset']
 
     ffmpeg_command = [
         ffmpeg_exe,
@@ -48,9 +56,9 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24):
         "-vcodec",
         "libx264",
         "-preset",
-        "slow",
+        preset,
         "-crf",
-        "17",
+        str(crf),
         # Codec and output location added below
     ]
 

@@ -65,7 +65,7 @@ def get_dtype_code(i):
     raise TypeError("Unknown Data Type")
 
 
-def create_shard_worker(data, coords, compression):
+def create_shard_worker(data, coords, compression, compression_opts=None):
     c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
 
     # compress
@@ -77,9 +77,9 @@ def create_shard_worker(data, coords, compression):
             chunk_bin = c.tobytes(order="c")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
         case 2:
-            return vidlib.encode_stack(c, method=vidlib.EncoderType.X264, debug=DEBUG)
+            return vidlib.encode_stack(c, method=vidlib.EncoderType.X264, debug=DEBUG, compression_opts=compression_opts)
         case 3:
-            return vidlib.encode_stack(c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG)
+            return vidlib.encode_stack(c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG, compression_opts=compression_opts)
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
 
@@ -90,6 +90,7 @@ def create_shard(
     data,
     chunk_size,
     compression,
+    compression_opts=None,
     thread_count=8,
     chunk_batch=1024,
     crop=None,
@@ -124,6 +125,7 @@ def create_shard(
                         data,
                         (istart, iend, jstart, jend, kstart, kend),
                         compression,
+                        compression_opts=compression_opts
                     )
 
     chunk_table = []
@@ -178,7 +180,7 @@ def create_shard(
 
 
 def create_sisf(
-    fname: str, data, mchunk_size, chunk_size, res, enable_status=True, downsampling=None, compression=1, thread_count=8
+    fname: str, data, mchunk_size, chunk_size, res, enable_status=True, downsampling=None, compression=1, thread_count=8, compression_opts=None
 ) -> None:
     """
     Function to create a SISF archive.
@@ -255,7 +257,7 @@ def create_sisf(
 
                     # Save 1X image
                     create_shard(
-                        chunk_name_data, chunk_name_meta, chunk, chunk_size, compression, thread_count=thread_count
+                        chunk_name_data, chunk_name_meta, chunk, chunk_size, compression, thread_count=thread_count, compression_opts=compression_opts
                     )
 
                     # Perform downsampling
