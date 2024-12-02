@@ -95,9 +95,12 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
             to_encoder = np.moveaxis(input_stack, -1, 0).tobytes()
         case np.uint16:
             # apply rescale...
-            to_encoder = np.array(input_stack, dtype=float)
-            to_encoder /= to_encoder.max() if to_encoder.max() > 0 else 1
-            to_encoder *= 2**8
+            to_encoder = np.array(input_stack, dtype=np.float32)
+            # to_encoder /= to_encoder.max() if to_encoder.max() > 0 else 1
+            # to_encoder *= 2**8
+
+            to_encoder = to_encoder**0.5
+
             to_encoder = to_encoder.astype(np.uint8)
 
             to_encoder = np.moveaxis(to_encoder, -1, 0)
