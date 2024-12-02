@@ -23,12 +23,12 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
     h = input_stack.shape[1]
 
     crf = 17
-    preset = 'slow'
+    preset = "slow"
     if compression_opts:
         if "crf" in compression_opts:
-            crf = compression_opts['crf']
-        if 'preset' in compression_opts:
-            preset = compression_opts['preset']
+            crf = compression_opts["crf"]
+        if "preset" in compression_opts:
+            preset = compression_opts["preset"]
 
     ffmpeg_command = [
         ffmpeg_exe,
@@ -85,7 +85,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         # stderr = subprocess.PIPE
-        stderr = subprocess.DEVNULL
+        stderr=subprocess.DEVNULL,
     )
 
     to_encoder = b""
@@ -147,8 +147,8 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
     out_np = np.frombuffer(out, dtype=np.uint8)
 
     t_size = out_np.shape[0] // (dims[0] * dims[1])
-    out_np = out_np.reshape((t_size, *dims)) # Z X Y
+    out_np = out_np.reshape((t_size, *dims))  # Z X Y
 
-    out_np = np.moveaxis(out_np, 0, -1) # X Y Z
+    out_np = np.moveaxis(out_np, 0, -1)  # X Y Z
 
     return out_np
