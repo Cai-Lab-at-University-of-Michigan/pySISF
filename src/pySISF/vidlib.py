@@ -1,81 +1,114 @@
 #   ---------------------------------------------------------------------------------
-#   Copyright (c) University of Michigan 2020-2024. All rights reserved.
+#   Copyright (c) University of Michigan 2020-2025. All rights reserved.
 #   Licensed under the MIT License. See LICENSE in project root for information.
 #   ---------------------------------------------------------------------------------
 
 from enum import Enum
-
-import ffmpeg
 import numpy as np
+import subprocess
 
-fmpeg_exe = "ffmpeg"
+ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
 
-def encode_stack(input_stack, method=EncoderType.X264, debug=False):
-    t = input_stack.shape[0]
-    w = input_stack.shape[1]
-    h = input_stack.shape[2]
+def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, compression_opts=None):
+    if len(input_stack.shape) != 3:
+        raise ValueError(f"Invalid input size {input_stack.shape}! (should be 3)")
 
-    nodes = ffmpeg.input("pipe:", format="rawvideo", pix_fmt="gray", s=f"{h}x{w}", framerate="24/1")
+    # Input XYZ formatted, using Z as time channel
+
+    t = input_stack.shape[2]
+    w = input_stack.shape[0]
+    h = input_stack.shape[1]
+
+    crf = 17
+    preset = "slow"
+    if compression_opts:
+        if "crf" in compression_opts:
+            crf = compression_opts["crf"]
+        if "preset" in compression_opts:
+            preset = compression_opts["preset"]
+
+    ffmpeg_command = [
+        ffmpeg_exe,
+        # Formatting for the input stream
+        "-f",
+        "rawvideo",
+        "-vcodec",
+        "rawvideo",
+        "-pix_fmt",
+        "gray",
+        "-s",
+        f"{h}x{w}",
+        "-r",
+        f"{fps}/1",
+        "-i",
+        "-",
+        # Formatting for the output stream
+        "-an",
+        "-f",
+        "rawvideo",
+        "-r",
+        f"{fps}/1",
+        "-pix_fmt",
+        "gray",
+        "-vcodec",
+        "libx264",
+        "-preset",
+        preset,
+        "-crf",
+        str(crf),
+        # Codec and output location added below
+    ]
 
     match method:
         case EncoderType.X264:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libx264",
-            )
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libx264")
         case EncoderType.X265:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libx265",
-            )
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libx265")
         case EncoderType.AV1_AOM:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libaom-av1",
-            )
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libaom-av1")
         case EncoderType.AV1_SVT:
-            nodes = nodes.output(
-                "pipe:",
-                format="rawvideo",
-                pix_fmt="gray",
-                framerate="24/1",
-                vcodec="libsvtav1",
-            )
+            ffmpeg_command.append("-vcodec")
+            ffmpeg_command.append("libsvtav1")
         case _:
             raise ValueError(f"Unknown method {method}.")
 
-    process = nodes.run_async(
-        cmd=fmpeg_exe if method != EncoderType.AV1_SVT else "./ffmpeg_forav1",
-        pipe_stdout=True,
-        pipe_stdin=True,
-        pipe_stderr=(not debug),
+    ffmpeg_command.append("pipe:")
+
+    job = subprocess.Popen(
+        ffmpeg_command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        # stderr = subprocess.PIPE
+        stderr=subprocess.DEVNULL,
     )
+
+    to_encoder = b""
 
     match input_stack.dtype:
         case np.uint8:
-            to_encoder = input_stack.tobytes()
+            to_encoder = np.moveaxis(input_stack, -1, 0).tobytes()
         case np.uint16:
             # apply rescale...
-            to_encoder = np.array(input_stack, dtype=float)
-            to_encoder /= to_encoder.max()
-            to_encoder *= 2**8
+            to_encoder = np.array(input_stack, dtype=np.float32)
+            # to_encoder /= to_encoder.max() if to_encoder.max() > 0 else 1
+            # to_encoder *= 2**8
+
+            to_encoder = to_encoder**0.5
+
+            to_encoder = to_encoder.astype(np.uint8)
+
+            to_encoder = np.moveaxis(to_encoder, -1, 0)
             to_encoder = to_encoder.tobytes()
         case _:
             raise ValueError(f"Invalid data input type {input_stack.dtype}.")
 
-    out, err = process.communicate(input=to_encoder)
+    out, err = job.communicate(input=to_encoder)
 
     if not len(out):
         raise ValueError("No output receieved from ffmpeg. Is your chunk size sufficient?")
@@ -83,19 +116,42 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False):
     return out
 
 
-def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False):
-    nodes = ffmpeg.input("pipe:", framerate="24/1").output("pipe:", format="rawvideo", pix_fmt="gray", framerate="24/1")
+def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps="24/1"):
+    ffmpeg_command = [
+        ffmpeg_exe,
+        # Formatting for the input stream
+        "-r",
+        fps,
+        "-i",
+        "pipe:",
+        # Formatting for the output stream
+        "-an",
+        "-f",
+        "rawvideo",
+        "-r",
+        fps,
+        "-pix_fmt",
+        "gray",
+        "-vcodec",
+        "rawvideo",
+        # Codec and output location added below
+        "pipe:",
+    ]
 
-    process = nodes.run_async(cmd=fmpeg_exe, pipe_stdout=True, pipe_stdin=True, pipe_stderr=(not debug))
+    job = subprocess.Popen(
+        ffmpeg_command,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        # stderr = subprocess.PIPE
+    )
 
-    process.stdin.write(input_blob)
-    process.stdin.close()
+    out, err = job.communicate(input=input_blob)
 
-    r = process.stdout.read()
+    out_np = np.frombuffer(out, dtype=np.uint8)
 
-    out = np.frombuffer(r, dtype=np.uint8)
+    t_size = out_np.shape[0] // (dims[0] * dims[1])
+    out_np = out_np.reshape((t_size, *dims))  # Z X Y
 
-    t_size = out.shape[0] // (dims[0] * dims[1])
-    out = out.reshape((t_size, *dims))
+    out_np = np.moveaxis(out_np, 0, -1)  # X Y Z
 
-    return out
+    return out_np
