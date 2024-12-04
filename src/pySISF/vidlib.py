@@ -53,8 +53,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         f"{fps}/1",
         "-pix_fmt",
         "gray",
-        #"-vcodec",
-        #"libx264",
+        # "-vcodec",
+        # "libx264",
         "-preset",
         preset,
         "-crf",
@@ -84,7 +84,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         ffmpeg_command,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        #stderr = subprocess.PIPE
+        # stderr = subprocess.PIPE
         stderr=subprocess.DEVNULL,
     )
 
