@@ -158,7 +158,7 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
         ffmpeg_command,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        # stderr = subprocess.PIPE
+        stderr = subprocess.PIPE
     )
 
     out, err = job.communicate(input=input_blob)
