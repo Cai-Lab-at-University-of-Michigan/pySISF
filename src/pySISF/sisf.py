@@ -82,7 +82,7 @@ def create_shard_worker(data, coords, compression, compression_opts=None):
             )
         case 3:
             return vidlib.encode_stack(
-                c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG, compression_opts=compression_opts
+                c, method=vidlib.EncoderType.AV1_AOM, debug=DEBUG, compression_opts=compression_opts
             )
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
