@@ -84,8 +84,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         ffmpeg_command,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        # stderr = subprocess.PIPE
-        stderr=subprocess.DEVNULL,
+        stderr = subprocess.PIPE
+        #stderr=subprocess.DEVNULL,
     )
 
     to_encoder = b""
