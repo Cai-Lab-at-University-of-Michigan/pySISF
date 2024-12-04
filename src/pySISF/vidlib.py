@@ -31,10 +31,10 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
             preset = "slow"
         case EncoderType.AV1_AOM:
             crf = 5
-            preset = '3'
+            preset = "3"
         case EncoderType.AV1_SVT:
             crf = 5
-            preset = '3'
+            preset = "3"
         case _:
             raise ValueError(f"Unknown method {method}.")
 
@@ -76,8 +76,6 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         # Codec and output location added below
     ]
 
-
-
     match method:
         case EncoderType.X264:
             ffmpeg_command.append("-vcodec")
@@ -101,7 +99,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         # stderr = subprocess.PIPE
-        #stderr=subprocess.DEVNULL,
+        # stderr=subprocess.DEVNULL,
     )
 
     to_encoder = b""
