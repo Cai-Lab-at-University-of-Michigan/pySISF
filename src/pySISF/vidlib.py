@@ -22,8 +22,22 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
     w = input_stack.shape[0]
     h = input_stack.shape[1]
 
-    crf = 17
-    preset = "slow"
+    match method:
+        case EncoderType.X264:
+            crf = 17
+            preset = "slow"
+        case EncoderType.X265:
+            crf = 17
+            preset = "slow"
+        case EncoderType.AV1_AOM:
+            crf = 5
+            preset = '3'
+        case EncoderType.AV1_SVT:
+            crf = 5
+            preset = '3'
+        case _:
+            raise ValueError(f"Unknown method {method}.")
+
     if compression_opts:
         if "crf" in compression_opts:
             crf = compression_opts["crf"]
@@ -61,6 +75,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         str(crf),
         # Codec and output location added below
     ]
+
+
 
     match method:
         case EncoderType.X264:
