@@ -87,6 +87,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
             ffmpeg_command.append("-vcodec")
             ffmpeg_command.append("libaom-av1")
         case EncoderType.AV1_SVT:
+            ffmpeg_command.append("-rc")
+            ffmpeg_command.append("0")
             ffmpeg_command.append("-vcodec")
             ffmpeg_command.append("libsvtav1")
         case _:
