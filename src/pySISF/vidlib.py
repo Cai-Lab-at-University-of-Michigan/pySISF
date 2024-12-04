@@ -7,6 +7,9 @@ from enum import Enum
 import numpy as np
 import subprocess
 
+# Static builds can be downloaded from:
+# - https://github.com/BtbN/FFmpeg-Builds/releases/tag/latest
+# - https://johnvansickle.com/ffmpeg/
 ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
