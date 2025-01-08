@@ -65,16 +65,23 @@ def get_dtype_code(i):
     raise TypeError("Unknown Data Type")
 
 
-def create_shard_worker(data, coords, compression, compression_opts=None):
-    c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+def create_shard_worker(data, coords, compression, compression_opts=None, buffer_size=None):
+    if buffer_size:
+        cs = (coords[1] - coords[0], coords[3] - coords[2], coords[5] - coords[4])
+
+        c = np.zeros(shape=buffer_size if buffer_size else cs, dtype=np.uint16)
+
+        c[: cs[0], : cs[1], : cs[2]] += data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+    else:
+        c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
 
     # compress
     match compression:
         case 0:
-            chunk_bin = c.tobytes(order="c")
+            chunk_bin = c.tobytes(order="C")
             return chunk_bin
         case 1:
-            chunk_bin = c.tobytes(order="c")
+            chunk_bin = c.tobytes(order="C")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
         case 2:
             return vidlib.encode_stack(
@@ -130,6 +137,7 @@ def create_shard(
                         (istart, iend, jstart, jend, kstart, kend),
                         compression,
                         compression_opts=compression_opts,
+                        buffer_size=chunk_size if (compression in [2, 3]) else None,
                     )
 
     chunk_table = []
