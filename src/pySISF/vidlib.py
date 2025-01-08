@@ -7,6 +7,9 @@ from enum import Enum
 import numpy as np
 import subprocess
 
+# Static builds can be downloaded from:
+# - https://github.com/BtbN/FFmpeg-Builds/releases/tag/latest
+# - https://johnvansickle.com/ffmpeg/
 ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
@@ -22,8 +25,22 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
     w = input_stack.shape[0]
     h = input_stack.shape[1]
 
-    crf = 17
-    preset = "slow"
+    match method:
+        case EncoderType.X264:
+            crf = 17
+            preset = "slow"
+        case EncoderType.X265:
+            crf = 17
+            preset = "slow"
+        case EncoderType.AV1_AOM:
+            crf = 5
+            preset = "3"
+        case EncoderType.AV1_SVT:
+            crf = 5
+            preset = "3"
+        case _:
+            raise ValueError(f"Unknown method {method}.")
+
     if compression_opts:
         if "crf" in compression_opts:
             crf = compression_opts["crf"]
@@ -53,8 +70,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         f"{fps}/1",
         "-pix_fmt",
         "gray",
-        "-vcodec",
-        "libx264",
+        # "-vcodec",
+        # "libx264",
         "-preset",
         preset,
         "-crf",
@@ -73,6 +90,8 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
             ffmpeg_command.append("-vcodec")
             ffmpeg_command.append("libaom-av1")
         case EncoderType.AV1_SVT:
+            ffmpeg_command.append("-rc")
+            ffmpeg_command.append("0")
             ffmpeg_command.append("-vcodec")
             ffmpeg_command.append("libsvtav1")
         case _:
@@ -142,7 +161,7 @@ def decode_stack(input_blob, dims=(128, 128), method="libx264", debug=False, fps
         ffmpeg_command,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        # stderr = subprocess.PIPE
+        #stderr = subprocess.PIPE
     )
 
     out, err = job.communicate(input=input_blob)
