@@ -106,7 +106,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         # stderr = subprocess.PIPE
-        stderr=subprocess.DEVNULL if not DEBUG else None,
+        stderr=subprocess.DEVNULL if not DEBUG else subprocess.STDOUT,
     )
 
     to_encoder = b""
