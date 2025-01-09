@@ -137,7 +137,7 @@ def create_shard(
                         (istart, iend, jstart, jend, kstart, kend),
                         compression,
                         compression_opts=compression_opts,
-                        buffer_size=chunk_size if (compression in [2, 3]) else None,
+                        buffer_size=chunk_size if (compression==2 or compression==3) else None,
                     )
 
     chunk_table = []
