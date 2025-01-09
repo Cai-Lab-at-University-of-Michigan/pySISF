@@ -14,6 +14,8 @@ ffmpeg_exe = "ffmpeg"
 
 EncoderType = Enum("EncoderType", ["X264", "X265", "AV1_AOM", "AV1_SVT"])
 
+DEBUG=False
+
 
 def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, compression_opts=None):
     if len(input_stack.shape) != 3:
@@ -104,7 +106,7 @@ def encode_stack(input_stack, method=EncoderType.X264, debug=False, fps=24, comp
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         # stderr = subprocess.PIPE
-        stderr=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL if not DEBUG else subprocess.STDOUT,
     )
 
     to_encoder = b""
