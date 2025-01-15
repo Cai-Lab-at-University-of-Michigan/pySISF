@@ -643,7 +643,6 @@ class sisf:
         outshape = tuple(stop - start for start, stop in keys)
 
         out = np.zeros(shape=outshape, dtype=np.uint16)
-        outr = out.ravel()
 
         scale = 1
         mcx = self.mchunk[0] // scale
