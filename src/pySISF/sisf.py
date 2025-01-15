@@ -362,12 +362,12 @@ class sisf_chunk:
                 while True:
                     chunk = bytes(itertools.islice(iterable, SHARD_LINE_SIZE))
 
-                    self.cache[i] = struct.unpack(SHARD_LINE_LAYOUT, chunk)
-
                     if len(chunk) == 0:
                         break
                     elif len(chunk) < SHARD_LINE_SIZE:
-                        raise ValueError(f"Invalid read size {len(meta_bin)}, likely invalid chunk id {idx}")
+                        raise ValueError(f"Invalid read size {len(chunk)} when loading metadata cache")
+
+                    self.cache[i] = struct.unpack(SHARD_LINE_LAYOUT, chunk)
 
                     i += 1
 
