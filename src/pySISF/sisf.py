@@ -354,6 +354,24 @@ class sisf_chunk:
                 "crop": tuple(self.header[10:16]),
             }
 
+            if self.cache is not None:
+                index_table_bin = f.read()
+
+                i = 0
+                iterable = iter(index_table_bin)
+                while True:
+                    chunk = bytes(itertools.islice(iterable, SHARD_LINE_SIZE))
+
+                    self.cache[i] = struct.unpack(SHARD_LINE_LAYOUT, chunk)
+
+                    if len(chunk) == 0:
+                        break
+                    elif len(chunk) < SHARD_LINE_SIZE:
+                        raise ValueError(f"Invalid read size {len(meta_bin)}, likely invalid chunk id {idx}")
+
+                    i += 1
+
+
         self.version = self.header_parsed["version"]
         self.dtype = self.header_parsed["dtype"]
         self.channel_count = self.header_parsed["channel_count"]
@@ -372,10 +390,11 @@ class sisf_chunk:
 
         self.chunk_counts = [self.countx, self.county, self.countz]
 
-    def __init__(self, fname_data, fname_meta, parent=None):
+    def __init__(self, fname_data, fname_meta, parent=None, cache_metadata=False):
         self.parent = parent
         self.fname_data = fname_data
         self.fname_meta = fname_meta
+        self.cache = {} if cache_metadata else None
 
         self.parse_metadata()
 
@@ -387,6 +406,10 @@ class sisf_chunk:
         return (ix * self.countz * self.county) + (iy * self.countz) + iz
 
     def get_metadata(self, idx):
+        if self.cache is not None:
+            if idx in self.cache:
+                return self.cache[idx]
+
         with open(self.fname_meta, "rb") as f:
             f.seek(SHARD_HEADER_SIZE + (SHARD_LINE_SIZE * idx))
             meta_bin = f.read(SHARD_LINE_SIZE)
@@ -558,10 +581,12 @@ class sisf:
         self.res = self.header_parsed["res"]
         self.size = self.header_parsed["size"]
 
-    def __init__(self, fname):
+    def __init__(self, fname, cache_metadata=False):
         self.fname = fname
         if self.fname.endswith("/"):
             self.fname = self.fname[:-1]
+
+        self.cache_metadata = cache_metadata
 
         # self.chunk_lock = thread.Mutex()
 
@@ -576,7 +601,7 @@ class sisf:
         fname_data = f"{self.fname}/data/{chunk_fname}.data"
         fname_meta = f"{self.fname}/meta/{chunk_fname}.meta"
 
-        return sisf_chunk(fname_data, fname_meta, parent=self)
+        return sisf_chunk(fname_data, fname_meta, parent=self, cache_metadata=self.cache_metadata)
 
     def __getitem__(self, key):
         if len(key) != 4:
