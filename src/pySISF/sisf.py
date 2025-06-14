@@ -237,7 +237,7 @@ def create_sisf(
     dtype_code = get_dtype_code(data.dtype)
     # TODO handle dtype errors
 
-    print(channel_count, size)
+    #print(channel_count, size)
 
     # Create Header
     with open(f"{fname}/{METADATA_NAME}", "wb") as f:
@@ -425,10 +425,13 @@ class sisf_chunk:
             f.seek(meta_off)
             chunk_compressed = f.read(meta_size)
 
-        if self.compression_type == 1:
-            chunk_decompressed = zstd.decompress(chunk_compressed)
-        else:
-            raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
+        match self.compression_type:
+            case 0:
+                chunk_decompressed = chunk_compressed
+            case 1:
+                chunk_decompressed = zstd.decompress(chunk_compressed)
+            case _:
+                raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
 
         out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
 
