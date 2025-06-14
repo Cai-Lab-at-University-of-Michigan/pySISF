@@ -65,16 +65,23 @@ def get_dtype_code(i):
     raise TypeError("Unknown Data Type")
 
 
-def create_shard_worker(data, coords, compression, compression_opts=None):
-    c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+def create_shard_worker(data, coords, compression, compression_opts=None, buffer_size=None):
+    if buffer_size:
+        cs = (coords[1] - coords[0], coords[3] - coords[2], coords[5] - coords[4])
+
+        c = np.zeros(shape=buffer_size if buffer_size else cs, dtype=np.uint16)
+
+        c[: cs[0], : cs[1], : cs[2]] += data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+    else:
+        c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
 
     # compress
     match compression:
         case 0:
-            chunk_bin = c.tobytes(order="c")
+            chunk_bin = c.tobytes(order="C")
             return chunk_bin
         case 1:
-            chunk_bin = c.tobytes(order="c")
+            chunk_bin = c.tobytes(order="C")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
         case 2:
             return vidlib.encode_stack(
@@ -130,6 +137,7 @@ def create_shard(
                         (istart, iend, jstart, jend, kstart, kend),
                         compression,
                         compression_opts=compression_opts,
+                        buffer_size=chunk_size if (compression==2 or compression==3) else None,
                     )
 
     chunk_table = []
@@ -229,7 +237,7 @@ def create_sisf(
     dtype_code = get_dtype_code(data.dtype)
     # TODO handle dtype errors
 
-    print(channel_count, size)
+    #print(channel_count, size)
 
     # Create Header
     with open(f"{fname}/{METADATA_NAME}", "wb") as f:
@@ -346,6 +354,24 @@ class sisf_chunk:
                 "crop": tuple(self.header[10:16]),
             }
 
+            if self.cache is not None:
+                index_table_bin = f.read()
+
+                i = 0
+                iterable = iter(index_table_bin)
+                while True:
+                    chunk = bytes(itertools.islice(iterable, SHARD_LINE_SIZE))
+
+                    if len(chunk) == 0:
+                        break
+                    elif len(chunk) < SHARD_LINE_SIZE:
+                        raise ValueError(f"Invalid read size {len(chunk)} when loading metadata cache")
+
+                    self.cache[i] = struct.unpack(SHARD_LINE_LAYOUT, chunk)
+
+                    i += 1
+
+
         self.version = self.header_parsed["version"]
         self.dtype = self.header_parsed["dtype"]
         self.channel_count = self.header_parsed["channel_count"]
@@ -364,10 +390,11 @@ class sisf_chunk:
 
         self.chunk_counts = [self.countx, self.county, self.countz]
 
-    def __init__(self, fname_data, fname_meta, parent=None):
+    def __init__(self, fname_data, fname_meta, parent=None, cache_metadata=False):
         self.parent = parent
         self.fname_data = fname_data
         self.fname_meta = fname_meta
+        self.cache = {} if cache_metadata else None
 
         self.parse_metadata()
 
@@ -379,6 +406,10 @@ class sisf_chunk:
         return (ix * self.countz * self.county) + (iy * self.countz) + iz
 
     def get_metadata(self, idx):
+        if self.cache is not None:
+            if idx in self.cache:
+                return self.cache[idx]
+
         with open(self.fname_meta, "rb") as f:
             f.seek(SHARD_HEADER_SIZE + (SHARD_LINE_SIZE * idx))
             meta_bin = f.read(SHARD_LINE_SIZE)
@@ -394,10 +425,13 @@ class sisf_chunk:
             f.seek(meta_off)
             chunk_compressed = f.read(meta_size)
 
-        if self.compression_type == 1:
-            chunk_decompressed = zstd.decompress(chunk_compressed)
-        else:
-            raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
+        match self.compression_type:
+            case 0:
+                chunk_decompressed = chunk_compressed
+            case 1:
+                chunk_decompressed = zstd.decompress(chunk_compressed)
+            case _:
+                raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
 
         out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
 
@@ -550,10 +584,12 @@ class sisf:
         self.res = self.header_parsed["res"]
         self.size = self.header_parsed["size"]
 
-    def __init__(self, fname):
+    def __init__(self, fname, cache_metadata=False):
         self.fname = fname
         if self.fname.endswith("/"):
             self.fname = self.fname[:-1]
+
+        self.cache_metadata = cache_metadata
 
         # self.chunk_lock = thread.Mutex()
 
@@ -568,7 +604,7 @@ class sisf:
         fname_data = f"{self.fname}/data/{chunk_fname}.data"
         fname_meta = f"{self.fname}/meta/{chunk_fname}.meta"
 
-        return sisf_chunk(fname_data, fname_meta, parent=self)
+        return sisf_chunk(fname_data, fname_meta, parent=self, cache_metadata=self.cache_metadata)
 
     def __getitem__(self, key):
         if len(key) != 4:
@@ -610,7 +646,6 @@ class sisf:
         outshape = tuple(stop - start for start, stop in keys)
 
         out = np.zeros(shape=outshape, dtype=np.uint16)
-        outr = out.ravel()
 
         scale = 1
         mcx = self.mchunk[0] // scale
