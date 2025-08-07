@@ -422,15 +422,20 @@ class sisf_chunk:
             f.seek(meta_off)
             chunk_compressed = f.read(meta_size)
 
+        sx, sy, sz = self.get_chunk_size(idx)
+
         match self.compression_type:
             case 0:
                 chunk_decompressed = chunk_compressed
                 out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
+                out = out.reshape((sx, sy, sz))
             case 1:
                 chunk_decompressed = zstd.decompress(chunk_compressed)
                 out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
+                out = out.reshape((sx, sy, sz))
             case 2 | 3:
                 out = h5ffmpeg.decompress_native(chunk_compressed)
+                out = out[:sx, :sy, :sz]  # crop to size, discard padding
             case _:
                 raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
 
@@ -452,8 +457,8 @@ class sisf_chunk:
         )
 
     def get_chunk_numpy(self, idx):
-        sx, sy, sz = self.get_chunk_size(idx)
-        return self.get_chunk(idx).reshape((sx, sy, sz))
+        # This function is here for compatibility with legacy code
+        return self.get_chunk(idx)
 
     def read_pixel(self, x, y, z):
         xmin = self.chunk_size[0] * (x // self.chunk_size[0])
