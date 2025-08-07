@@ -15,7 +15,8 @@ from collections import defaultdict
 import zstd
 import numpy as np
 
-from pySISF import vidlib, sndif_utils
+from pySISF import sndif_utils # vidlib
+import h5ffmpeg
 
 METADATA_NAME = "metadata.bin"
 DEBUG = False
@@ -84,13 +85,9 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
             chunk_bin = c.tobytes(order="C")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
         case 2:
-            return vidlib.encode_stack(
-                c, method=vidlib.EncoderType.X264, debug=DEBUG, compression_opts=compression_opts
-            )
+            return h5ffmpeg.compress_native(c, codec="libx264")
         case 3:
-            return vidlib.encode_stack(
-                c, method=vidlib.EncoderType.AV1_SVT, debug=DEBUG, compression_opts=compression_opts
-            )
+            return h5ffmpeg.compress_native(c, codec="libsvtav1")
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
 
@@ -428,12 +425,14 @@ class sisf_chunk:
         match self.compression_type:
             case 0:
                 chunk_decompressed = chunk_compressed
+                out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
             case 1:
                 chunk_decompressed = zstd.decompress(chunk_compressed)
+                out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
+            case 2 | 3:
+                out = h5ffmpeg.decompress_native(chunk_compressed)
             case _:
                 raise NotImplementedError(f"Decompression type {self.compression_type} not implemented.")
-
-        out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
 
         return out
 
