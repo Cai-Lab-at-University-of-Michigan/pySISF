@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Folder Watchdog Script
-Monitors a specified folder for file changes and automatically runs a Python script
-as a subprocess for each modified file. Limits concurrent subprocesses to 4.
-"""
-
 import os
 import sys
 import time
@@ -76,26 +69,23 @@ class FileChangeHandler(FileSystemEventHandler):
             '__pycache__',  # Python cache
             '.DS_Store',  # macOS system files
         ]
-        if  any(file_path.startswith(pattern) or file_path.endswith(pattern) for pattern in skip_patterns):
+        if  any(file_path.startswith(pattern) or file_path.endswith(pattern) for pattern in skip_patterns) or '.zip' not in file_path:
             return
 
         with self.lock:
             # Cancel any existing process for this file
             if file_path in self.running_processes:
-                print("Skip because already running for {file_path}")
+                print(f"Skip because already running for {file_path}")
                 return
-
-                #print(f"Cancelling existing process for {file_path}")
+            #print(f"Cancelling existing process for {file_path}")
                 #self.running_processes[file_path].cancel()
 
-        # Submit new task to executor
-        future = self.executor.submit(self.run_script, file_path, event_type)
-
-        with self.lock:
+            # Submit new task to executor
+            future = self.executor.submit(self.run_script, file_path, event_type)
             self.running_processes[file_path] = future
 
-        # Add callback to clean up completed processes
-        future.add_done_callback(lambda f: self.cleanup_process(file_path, f))
+            # Add callback to clean up completed processes
+            #future.add_done_callback(lambda f: self.cleanup_process(file_path, f))
 
     def run_script(self, file_path, event_type):
         """
@@ -110,13 +100,13 @@ class FileChangeHandler(FileSystemEventHandler):
 
         try:
             if not zipfile.is_zipfile(file_path):
-                print(f"✗ {file_path} is not a valid zip file.")
-                return
+                raise ValueError(f"not a valid zip file.")
             with zipfile.ZipFile(file_path, 'r') as zip_ref:
                 # Check the namelist because that tells if the zip is corrupt
                 zip_ref.namelist()
         except Exception as e:
             print(f"Skipping processing {file_path} because it failed the zip check")
+            self.cleanup_process(file_path)
             return
 
         try:
@@ -127,7 +117,7 @@ class FileChangeHandler(FileSystemEventHandler):
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.PIPE, #subprocess.PIPE,
                 text=True
             )
 
@@ -136,12 +126,13 @@ class FileChangeHandler(FileSystemEventHandler):
 
             if process.returncode == 0:
                 print(f"✓ Successfully processed {file_path}")
-                if stdout.strip():
-                    print(f"  Output: {stdout.strip()}")
             else:
                 print(f"✗ Error processing {file_path} (exit code: {process.returncode})")
-                if stderr.strip():
-                    print(f"  Error: {stderr.strip()}")
+
+            if stdout.strip():
+                print(f"STDOUT:\n", stdout.strip())
+            if stderr.strip():
+                print(f"STDERR:\n", stderr.strip())
 
         except subprocess.TimeoutExpired:
             print(f"⚠ Timeout processing {file_path}")
@@ -151,6 +142,8 @@ class FileChangeHandler(FileSystemEventHandler):
             if process:
                 process.kill()
             print(f"✗ Exception processing {file_path}: {e}")
+
+        self.cleanup_process(file_path)
 
     def cancel_process(self, file_path):
         """
@@ -162,10 +155,11 @@ class FileChangeHandler(FileSystemEventHandler):
                 future.cancel()
                 del self.running_processes[file_path]
 
-    def cleanup_process(self, file_path, future):
+    def cleanup_process(self, file_path):
         """
         Clean up completed process from tracking dictionary.
         """
+        #print("cleaning... ")
         with self.lock:
             if file_path in self.running_processes:
                 del self.running_processes[file_path]
