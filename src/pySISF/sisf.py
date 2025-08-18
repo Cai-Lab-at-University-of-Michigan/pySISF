@@ -70,9 +70,11 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
     if buffer_size:
         cs = (coords[1] - coords[0], coords[3] - coords[2], coords[5] - coords[4])
 
-        c = np.zeros(shape=buffer_size if buffer_size else cs, dtype=np.uint16)
-
-        c[: cs[0], : cs[1], : cs[2]] += data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+        if cs[0] == buffer_size[0] and cs[1] == buffer_size[1] and cs[2] == buffer_size[2]:
+            c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
+        else:
+            c = np.zeros(shape=buffer_size if buffer_size else cs, dtype=np.uint16)
+            c[: cs[0], : cs[1], : cs[2]] += data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
     else:
         c = data[coords[0] : coords[1], coords[2] : coords[3], coords[4] : coords[5]]
 
