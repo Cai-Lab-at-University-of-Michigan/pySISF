@@ -58,6 +58,10 @@ def create_metadata(version, dtype, channel_count, mchunk, res, size):
 
 
 def get_dtype_code(i):
+    if type(i) is int:
+        if i in [1, 2]:
+            return i
+
     if i == np.uint16:
         return 1
     if i == np.uint8:
