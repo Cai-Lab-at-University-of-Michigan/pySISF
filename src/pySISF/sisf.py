@@ -91,9 +91,9 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
             chunk_bin = c.tobytes(order="C")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
         case 2:
-            return h5ffmpeg.compress_native(c, codec="libx264")
+            return h5ffmpeg.compress_native(c, codec="libx264", **(compression_opts if compression_opts else {}))
         case 3:
-            return h5ffmpeg.compress_native(c, codec="libsvtav1")
+            return h5ffmpeg.compress_native(c, codec="libsvtav1", **(compression_opts if compression_opts else {}))
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
 
