@@ -57,9 +57,9 @@ test = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/microsoft/python-package-template/tree/main#readme"
-Source = "https://github.com/microsoft/python-package-template"
-Tracker = "https://github.com/microsoft/python-package-template/issues"
+Documentation = "https://cai-lab-at-university-of-michigan.github.io/pySISF/index.html"
+Source = "https://github.com/Cai-Lab-at-University-of-Michigan/pySISF"
+Tracker = "https://github.com/Cai-Lab-at-University-of-Michigan/pySISF/issues"
 
 [tool.flit.module]
 name = "pySISF"
