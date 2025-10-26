@@ -11,6 +11,7 @@ import itertools
 import concurrent
 import concurrent.futures
 from collections import defaultdict
+import multiprocessing
 
 import zstd
 import numpy as np
@@ -93,7 +94,11 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
         case 2:
             return h5ffmpeg.compress_native(c, codec="libx264", **(compression_opts if compression_opts else {}))
         case 3:
-            return h5ffmpeg.compress_native(c, codec="libsvtav1", **(compression_opts if compression_opts else {}))
+            with multiprocessing.get_context('spawn').Pool(1) as pool:
+                chunk_bin = pool.apply_async(h5ffmpeg.compress_native, (c,), {"codec": "libsvtav1", **(compression_opts if compression_opts else {})})
+                return chunk_bin.get()
+
+            #return h5ffmpeg.compress_native(c, codec="libsvtav1", **(compression_opts if compression_opts else {}))
         case _:
             raise ValueError(f"Invalid compression parameter {compression}")
 
