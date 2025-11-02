@@ -94,7 +94,7 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
         case 2:
             return h5ffmpeg.compress_native(c, codec="libx264", **(compression_opts if compression_opts else {}))
         case 3:
-            with multiprocessing.get_context('spawn').Pool(1) as pool:
+            with multiprocessing.get_context('fork').Pool(1) as pool:
             #with multiprocessing.Pool(1) as pool:
                 chunk_bin = pool.apply_async(h5ffmpeg.compress_native, (c,), {"codec": "libsvtav1", **(compression_opts if compression_opts else {})})
                 return chunk_bin.get()
