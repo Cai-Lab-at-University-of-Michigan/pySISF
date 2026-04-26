@@ -75,8 +75,12 @@ def downsample(in_array, out_array):
         Numpy array containing the downsampled image
     """
     for i, j in zip(in_array.shape, out_array.shape):
-        if i // 2 != j:
-            raise ValueError(f"Invalid casting ({i}/2) != ({j})")
+        if max(1, i // 2) != j:
+            raise ValueError(f"Invalid casting max(1, {i}/2) != ({j})")
+
+    si = 1 if in_array.shape[0] < 2 else 2
+    sj = 1 if in_array.shape[1] < 2 else 2
+    sk = 1 if in_array.shape[2] < 2 else 2
 
     for i in range(out_array.shape[0]):
         for j in range(out_array.shape[1]):
@@ -84,10 +88,10 @@ def downsample(in_array, out_array):
                 total: float = 0.0
                 n: int = 0
 
-                for ii in range(2):
-                    for jj in range(2):
-                        for kk in range(2):
-                            total += in_array[(i * 2) + ii, (j * 2) + jj, (k * 2) + kk]
+                for ii in range(si):
+                    for jj in range(sj):
+                        for kk in range(sk):
+                            total += in_array[(i * si) + ii, (j * sj) + jj, (k * sk) + kk]
                             n += 1
 
                 out_array[i, j, k] = int(total / n)

@@ -308,9 +308,9 @@ def create_sisf(
 
                             chunk_down = np.zeros(
                                 shape=(
-                                    downsample_pyramid[-1].shape[0] // 2,
-                                    downsample_pyramid[-1].shape[1] // 2,
-                                    downsample_pyramid[-1].shape[2] // 2,
+                                    max(1, downsample_pyramid[-1].shape[0] // 2),
+                                    max(1, downsample_pyramid[-1].shape[1] // 2),
+                                    max(1, downsample_pyramid[-1].shape[2] // 2),
                                 ),
                                 dtype=np.uint16,
                             )
