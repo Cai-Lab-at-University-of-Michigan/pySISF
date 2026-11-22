@@ -70,6 +70,24 @@ def get_dtype_code(i):
     raise TypeError("Unknown Data Type")
 
 
+def byte_shuffle(buf, itemsize):
+    """Byte 0 of every item, then byte 1, and so on (compression code 4). Trailing bytes stay put."""
+    b = np.frombuffer(buf, dtype=np.uint8)
+    n = len(b) // itemsize * itemsize
+    if itemsize <= 1 or n == 0:
+        return b.tobytes()
+    return b[:n].reshape(-1, itemsize).T.tobytes() + b[n:].tobytes()
+
+
+def byte_unshuffle(buf, itemsize):
+    """Inverse of byte_shuffle."""
+    b = np.frombuffer(buf, dtype=np.uint8)
+    n = len(b) // itemsize * itemsize
+    if itemsize <= 1 or n == 0:
+        return b.tobytes()
+    return b[:n].reshape(itemsize, -1).T.tobytes() + b[n:].tobytes()
+
+
 def create_shard_worker(data, coords, compression, compression_opts=None, buffer_size=None):
     if buffer_size:
         cs = (coords[1] - coords[0], coords[3] - coords[2], coords[5] - coords[4])
@@ -90,6 +108,10 @@ def create_shard_worker(data, coords, compression, compression_opts=None, buffer
         case 1:
             chunk_bin = c.tobytes(order="C")
             return zstd.ZSTD_compress(chunk_bin, 9, 1)
+        case 4:
+            # zstd level 3 after a byte shuffle with the item size (low bytes, then high bytes)
+            chunk_bin = byte_shuffle(c.tobytes(order="C"), c.dtype.itemsize)
+            return zstd.ZSTD_compress(chunk_bin, 3, 1)
         case 2:
             return h5ffmpeg.compress_native(c, codec="libx264", **(compression_opts if compression_opts else {}))
         case 3:
@@ -216,7 +238,8 @@ def create_sisf(
         res (3-tuple): resolution of the dataset in nanometers (nm), e.g. (100,100,100).
         enable_status (bool, default True): If true, print out a loading bar for creation using `tqdm`.
         downsampling (int, default None): How many downsample tiers to generate.
-        compression (int, default 1->ZSTD): What compression codec to use.
+        compression (int, default 1->ZSTD): What compression codec to use (0 raw, 1 zstd, 2 H.264,
+            3 AV1, 4 zstd level 3 after a byte shuffle).
         thread_count (int, default 8): How many threads to use for data packing.
     """
     if fname.endswith("/"):
@@ -437,6 +460,11 @@ class sisf_chunk:
                 out = out.reshape((sx, sy, sz))
             case 1:
                 chunk_decompressed = zstd.decompress(chunk_compressed)
+                out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
+                out = out.reshape((sx, sy, sz))
+            case 4:
+                itemsize = 2 if self.dtype == 1 else 1
+                chunk_decompressed = byte_unshuffle(zstd.decompress(chunk_compressed), itemsize)
                 out = np.frombuffer(chunk_decompressed, dtype=(np.uint16 if self.dtype == 1 else np.uint8))
                 out = out.reshape((sx, sy, sz))
             case 2 | 3:
